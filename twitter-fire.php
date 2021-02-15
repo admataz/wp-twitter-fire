@@ -9,13 +9,13 @@
  * @author    Adam Davis <adam@admataz.com>
  * @license   GPL-2.0+
  * @link      http://admataz.com
- * @copyright 2013 Adam Davis
+ * @copyright 2021 Adam Davis
  *
  * @wordpress-plugin
  * Plugin Name:  twitter-fire
  * Plugin URI:        http://admataz.com
  * Description:       A simple way to embed a twitter timeline - provides all the caching locally and authentication with Twitter
- * Version:           1.0.0
+ * Version:           2.0.0
  * Author: Adam Davis
  * Author URI:        http://admataz.com
  * Text Domain:       twitter-fire-locale

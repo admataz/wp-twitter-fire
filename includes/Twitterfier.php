@@ -52,6 +52,7 @@ class Twitterfier
     );
 
     $response = $this->do_http_request($twitter_auth_endpoint, $headers, $data);
+    
     if (!$response || !$response->data) {
       return false;
     }
@@ -101,17 +102,23 @@ class Twitterfier
    * get the latest tweets! - from v2 API
    * generally this would be run from a cron
    */
-  public function get_tweetsV2($options = array())
+  public function get_user_tweetsV2($username, $options = array())
   {
     $defaults = array(
-      'screen_name' => '',
-      'count' => 20,
-      'exclude_replies' => true,
-      'include_rts' => false
+      'exclude'=>'retweets',
+      'expansions'=>'attachments.poll_ids,attachments.media_keys,author_id,entities.mentions.username,in_reply_to_user_id,referenced_tweets.id,referenced_tweets.id.author_id',
+      'max_results'=>20,
+      'media.fields'=>'duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics',
+      'tweet.fields'=>'attachments,author_id,context_annotations,conversation_id,created_at,entities,id,in_reply_to_user_id,lang,public_metrics,referenced_tweets,reply_settings,source,text',
+      'user.fields'=>'created_at,description,entities,id,name,pinned_tweet_id,profile_image_url,public_metrics,url,username,verified',
     );
+    
     $options = array_merge($defaults, $options);
     $q = http_build_query($options);
+    
     $auth_token = $this->auth();
+
+
     if (!$auth_token) {
       return array();
     }
@@ -119,11 +126,28 @@ class Twitterfier
       'Authorization' => $auth_token
     );
     $method = 'GET';
+
+    $user_id = '';
+    $user_id_response  = $this->do_http_request('https://api.twitter.com/2/users/by/username/'.$username, $headers, array(), $method);
     
-    $response  = $this->do_http_request('https://api.twitter.com/1.1/statuses/user_timeline.json?' . $q, $headers, array(), $method);
+    if ($user_id_response->code == '200') {
+      $user_id_data = json_decode($user_id_response->data);
+      $user_id = $user_id_data->data->id;
+    } else {
+      error_log($user_id_response->data);
+    }
+
+    if(!$user_id){
+      return array();
+    }
+
+    
+    $response  = $this->do_http_request('https://api.twitter.com/2/users/'.$user_id.'/tweets?' . $q, $headers, array(), $method);
     // Caches the json in the database for retreival 
     if ($response->code == '200') {
       $this->cache_tweets('twitterfire_latest_tweets', $response->data);
+    } else {
+      error_log($response->data);
     }
   }
 
@@ -133,12 +157,10 @@ class Twitterfier
   public function output($num = 5)
   {
     $tweetsdata = json_decode($this->get_cached_tweets('twitterfire_latest_tweets'));
-    $tweets = array();
-    foreach ($tweetsdata as $t) {
-      $t->htmltext = $this->twitterify($t->text);
-      $tweets[] = $t;
-    }
-    return array_slice($tweets, 0, $num);
+    // foreach ($tweetsdata->data as $k=>$t) {
+    //   $tweetsdata->data[$k]->htmltext = $this->twitterify($t->text);
+    // }
+    return $tweetsdata;
   }
 
   /**

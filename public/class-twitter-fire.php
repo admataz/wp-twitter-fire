@@ -108,9 +108,8 @@ class Twitter_Fire
 			$options['twitter_consumer_key_text'],
 			$options['twitter_consumer_secret_text']
 		);
-		$tobj->get_tweets(array(
-			'screen_name' => $options['twitter_screen_name_text'],
-			'count'=>$this->number_of_tweets
+		$tobj->get_user_tweetsV2($options['twitter_screen_name_text'], array(
+			'max_results'=>$this->number_of_tweets
 		));
 		update_option('twitterfire_last_api_fetch', time() + $this->cache_timer_minutes * 60);
 	}
@@ -118,7 +117,6 @@ class Twitter_Fire
 
 	public function output_tweets($val, $num = 5)
 	{
-
 		$next_fetch = get_option('twitterfire_last_api_fetch', 0);
 		if (!$next_fetch || time() > $next_fetch || $_GET['resetcache']) {
 			$this->get_tweets();
